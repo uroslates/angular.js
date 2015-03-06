@@ -14,7 +14,8 @@ var VALID_CLASS = 'ng-valid',
     DIRTY_CLASS = 'ng-dirty',
     UNTOUCHED_CLASS = 'ng-untouched',
     TOUCHED_CLASS = 'ng-touched',
-    PENDING_CLASS = 'ng-pending';
+    PENDING_CLASS = 'ng-pending',
+    UNSAVED_CLASS = 'ng-unsaved';
 
 
 var $ngModelMinErr = new minErr('ngModel');
@@ -231,6 +232,8 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
   this.$touched = false;
   this.$pristine = true;
   this.$dirty = false;
+  this.$unsaved = false;
+  this.$initialViewValue = undefined; // initial view value of component (before committing) TODO: Check when(if) to reset!?
   this.$valid = true;
   this.$invalid = false;
   this.$error = {}; // keep invalid keys here
@@ -425,6 +428,23 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
     ctrl.$touched = true;
     ctrl.$untouched = false;
     $animate.setClass($element, TOUCHED_CLASS, UNTOUCHED_CLASS);
+  };
+
+  /**
+   * @ngdoc method
+   * @name ngModel.NgModelController#$setUnsaved
+   *
+   * @description
+   * Sets the control to its unsaved state.
+   *
+   * This method can be called to remove the `ng-unsaved` class and set the control to its unsaved
+   * state (`ng-unsaved` class). A model is considered to be unsaved when the control has been different
+   * from when first compiled.
+   */
+  this.$setUnsaved = function(isUnsaved) {
+    ctrl.$unsaved = isUnsaved;
+    $animate[isUnsaved ? 'addClass' : 'removeClass']($element, UNSAVED_CLASS);
+    parentForm.$setUnsaved(isUnsaved);
   };
 
   /**
@@ -659,6 +679,8 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
     if (ctrl.$pristine) {
       this.$setDirty();
     }
+    // set unsaved
+    this.$setUnsaved(this.$initialViewValue !== ctrl.$viewValue);
     this.$$parseAndValidate();
   };
 
@@ -761,6 +783,9 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * @param {string} trigger Event that triggered the update.
    */
   this.$setViewValue = function(value, trigger) {
+    if (this.$initialViewValue === undefined) {
+      this.$initialViewValue = ctrl.$viewValue; // set only once/initially
+    }
     ctrl.$viewValue = value;
     if (!ctrl.$options || ctrl.$options.updateOnDefault) {
       ctrl.$$debounceViewValueCommit(trigger);

@@ -9,7 +9,8 @@ var nullFormCtrl = {
   $setValidity: noop,
   $setDirty: noop,
   $setPristine: noop,
-  $setSubmitted: noop
+  $setSubmitted: noop,
+  $setUnsaved: noop,
 },
 SUBMITTED_CLASS = 'ng-submitted';
 
@@ -76,6 +77,7 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
   form.$valid = true;
   form.$invalid = false;
   form.$submitted = false;
+  form.$unsaved = false;
 
   parentForm.$addControl(form);
 
@@ -280,6 +282,22 @@ function FormController(element, attrs, $scope, $animate, $interpolate) {
     $animate.addClass(element, SUBMITTED_CLASS);
     form.$submitted = true;
     parentForm.$setSubmitted();
+  };
+
+  /**
+   * @ngdoc method
+   * @name form.FormController#$setUnsaved
+   *
+   * @description
+   * Sets the form to a unsaved state.
+   *
+   * This method can be called to add the 'ng-unsaved' class and set the form to a unsaved
+   * state (ng-unsaved class). This method will also propagate to parent forms.
+   */
+  form.$setUnsaved = function(isUnsaved) {
+    $animate[isUnsaved ? 'addClass' : 'removeClass'](element, UNSAVED_CLASS);
+    form.$unsaved = isUnsaved;
+    parentForm.$setUnsaved(isUnsaved);
   };
 }
 
